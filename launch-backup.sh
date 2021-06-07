@@ -1,6 +1,7 @@
 #!/bin/bash
 #
 # Started by @Grraahaam
+# Continued by @Aversag
 #
 # Description :
 #       Script to manage Scaleway server/instance backups,
@@ -29,7 +30,7 @@ _query() {
 
 # Taking only the year-month-day (daily backup, more precision would be useless)
 get_date() {
-    date --utc --date="$1" +"%Y-%m-%d"
+    date --utc --date="$1" +"%Y%m%d"
 }
 
 ############################################# VARIABLES
@@ -43,7 +44,7 @@ SIB_MAX_RETENTION_DATE=$(get_date $(date --date="${TODAY} -${SIB_MAX_RETENTION} 
 
 ############################################# BACKUP PROCESS
 
-printf "\n🚧 Scaleway Instance Backup v0.1 (beta) 🚧\n\n"
+printf "\n🚧 Scaleway Instance Backup v0.2 (beta) 🚧\n\n"
 printf "🤞 @Grraahaam\n\n"
 
 [ $DRY_RUN -eq 0 ] && printf "Dry run : ✗\n" || printf "Dry run : ✓\n"
