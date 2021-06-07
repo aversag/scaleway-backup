@@ -14,7 +14,7 @@
 if [ ! -z $TERM ]; then
     BOLD=$(tput bold); NORM=$(tput sgr0);
 fi
-    
+
 RED='\033[0;31m'; BRED=${RED}${BOLD}
 GREEN='\033[0;32m'; BGREEN=${GREEN}${BOLD}
 YELLOW='\033[1;33m'; BYELLOW=${YELLOW}${BOLD}
@@ -56,7 +56,7 @@ printf "🕖 Searching your servers and backups...\n\n"
 # Fetch the list only once
 INSTANCES=$(scw instance server list $SIB_ZONE -o json | jq -r '.[] | @base64')
 IMAGES=$(scw instance image list $SIB_ZONE -o json | jq -r '.[] | @base64')
-# SNAPSHOTS=$(scw instance snapshot list $SIB_ZONE -o json | jq -r '.[] | @base64')
+SNAPSHOTS=$(scw instance snapshot list $SIB_ZONE -o json | jq -r '.[] | @base64')
 
 for instance in $(echo "$INSTANCES"); do
 
@@ -65,68 +65,64 @@ for instance in $(echo "$INSTANCES"); do
     printf "Name: ${BWHITE}$(_query "$instance" '.name')${RESET} (${active}$(_query "$instance" '.state')${RESET})\n"
     printf "ID: ${WHITE}$(_query "$instance" '.id') ${NC}\n"
     printf "Volume ID: ${WHITE}$(_query "$instance" '.volumes[].id') ${NC}\n"
-    
+
     # Define current instance/server variables
     count=0
     deleted=0
     create=1
-    
+
     for image in $(echo "$IMAGES"); do
 
-        if [[ "$(_query "$image" '.ServerID')" == "$(_query "$instance" '.id')" ]]; then
-        
+        if [[ "$(_query "$image" '.server_id')" == "$(_query "$instance" '.id')" ]]; then
+
             # Increment the backup counter (per server/instance)
             (( count++ ))
-            
+
             printf "[${BYELLOW}${count}${RESET}] 💿 Associated image:\n"
-            printf "\tname:\t\t${LGRAY}$(_query "$image" '.Name')${RESET}\n"
-            printf "\tid:\t\t${LGRAY}$(_query "$image" '.ID')${RESET}\n"
-            printf "\tcreation date:\t${LGRAY}$(get_date $(_query "$image" '.CreationDate'))${RESET}\n"
-            
+            printf "\tname:\t\t${LGRAY}$(_query "$image" '.name')${RESET}\n"
+            printf "\tid:\t\t${LGRAY}$(_query "$image" '.id')${RESET}\n"
+            printf "\tcreation date:\t${LGRAY}$(get_date $(_query "$image" '.creation_date'))${RESET}\n"
+
             # Images/Snapshots list is ordered ASC, so the latest backups are at the end of the list
-            if [[ $count > $SIB_MAX_BACKUP ]] && [[ $(get_date $(_query "$image" '.CreationDate')) -lt $(get_date "$SIB_MAX_RETENTION_DATE") ]]; then
-                
+            if [[ $count > $SIB_MAX_BACKUP ]] || [[ $(get_date $(_query "$image" '.creation_date')) -lt $(get_date "$SIB_MAX_RETENTION_DATE") ]]; then
+
                 printf "[${BYELLOW}${count}${RESET}] 🔥 ${BRED}Deleting old image and associated snapshot!${RESET}\n"
-                printf "\tname:\t\t${LGRAY}$(_query "$image" '.Name')${RESET}\n"
-                printf "\tid:\t\t${LGRAY}$(_query "$image" '.ID')${RESET}\n"
-                printf "\tcreation date:\t${LGRAY}$(get_date $(_query "$image" '.CreationDate'))${RESET}\n"
-                
+                printf "\tname:\t\t${LGRAY}$(_query "$image" '.name')${RESET}\n"
+                printf "\tid:\t\t${LGRAY}$(_query "$image" '.id')${RESET}\n"
+                printf "\tcreation date:\t${LGRAY}$(get_date $(_query "$image" '.creation_date'))${RESET}\n"
+
                 if [ $DRY_RUN -eq 0 ]; then
-                    scw instance image delete $(_query "$image" '.ID') $SIB_ZONE
-                    scw instance snapshot delete $(_query "$image" '.RootVolume.id') $SIB_ZONE
+                    scw instance image delete $(_query "$image" '.id') $SIB_ZONE
+                    scw instance snapshot delete $(_query "$image" '.root_volume.id') $SIB_ZONE
                 else
-                    printf "\nDRY-RUN : scw instance image delete $(_query "$image" '.ID') $SIB_ZONE\n"
-                    printf "DRY-RUN : scw instance snapshot delete $(_query "$image" '.RootVolume.id') $SIB_ZONE\n"
+                    printf "\nDRY-RUN : scw instance image delete $(_query "$image" '.id') $SIB_ZONE\n"
+                    printf "DRY-RUN : scw instance snapshot delete $(_query "$image" '.root_volume.id') $SIB_ZONE\n"
                 fi
-                
+
                 # Increment deleted backup counter
                 (( delete++ ))
             fi
-            
+
             # Should we take a snapshot?
-            create=$([[ $(get_date "$TODAY") > $(get_date $(_query "$image" '.CreationDate')) ]] && echo 1 || echo 0)
+            create=$([[ $(get_date "$TODAY") > $(get_date $(_query "$image" '.creation_date')) ]] && echo 1 || echo 0)
         fi
     done
-    
+
     # Only create a backup if none today
     if [ $create -ne 0 ]; then
-    
+
         printf "\n📀 Snapshotting! (${BYELLOW}backup_$(_query "$instance" '.name')_$TODAY${RESET})\n"
-        
+
         if [ $DRY_RUN -eq 0 ]; then
             scw instance server backup "$(_query "$instance" '.id')" name="backup_$(_query "$instance" '.name')_$TODAY" $SIB_ZONE
         else
             printf "\nDRY-RUN : scw instance server backup $(_query "$instance" '.id') name=backup_$(_query "$instance" '.name')_$TODAY $SIB_ZONE\n"
         fi
     fi
-    
-    # Uncomment the following if you want to output the total amount of backup (per server)
-    # Print the accurate backup amount (per server)
-    count=$(($count - $deleted))
-    [ $count -gt 0 ] && printf "Backup amount: ${BWHITE}$count${RESET}\n" || "Backup amount: ${BWHITE}0${RESET}\n"
 
     printf "\n------------------------\n\n"
-    
+
 done
 
 printf "Backup complete!👍\n\n"
+
