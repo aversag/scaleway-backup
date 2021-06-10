@@ -109,6 +109,25 @@ for instance in $(echo "$INSTANCES"); do
         fi
     done
 
+    for snapshot in $(echo "$SNAPSHOTS"); do
+
+        if [[ $(get_date $(_query "$snapshot" '.creation_date')) -lt $(get_date "$SIB_MAX_RETENTION_DATE") ]]; then
+
+            printf "[${BYELLOW}${count}${RESET}] 🔥 ${BRED}Deleting old snapshot!${RESET}\n"
+            printf "\tname:\t\t${LGRAY}$(_query "$snapshot" '.name')${RESET}\n"
+            printf "\tid:\t\t${LGRAY}$(_query "$snapshot" '.id')${RESET}\n"
+            printf "\tcreation date:\t${LGRAY}$(get_date $(_query "$snapshot" '.creation_date'))${RESET}\n"
+
+            if [ $DRY_RUN -eq 0 ]; then
+                scw instance snapshot delete $(_query "$snapshot" '.id') $SIB_ZONE
+            else
+                printf "\nDRY-RUN : scw instance snapshot delete $(_query "$snapshot" '.id') $SIB_ZONE\n"
+            fi
+
+        fi
+
+    done
+
     # Only create a backup if none today
     if [ $create -ne 0 ]; then
 
