@@ -111,7 +111,7 @@ for instance in $(echo "$INSTANCES"); do
 
     for snapshot in $(echo "$SNAPSHOTS"); do
 
-        if [[ $(get_date $(_query "$snapshot" '.creation_date')) -lt $(get_date "$SIB_MAX_RETENTION_DATE") ]]; then
+        if [[ $(get_date $(_query "$snapshot" '.creation_date')) -lt "$SIB_MAX_RETENTION_DATE" ]]; then
 
             printf "[${BYELLOW}${count}${RESET}] 🔥 ${BRED}Deleting old snapshot!${RESET}\n"
             printf "\tname:\t\t${LGRAY}$(_query "$snapshot" '.name')${RESET}\n"
