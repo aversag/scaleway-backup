@@ -85,7 +85,7 @@ for instance in $(echo "$INSTANCES"); do
             printf "\tcreation date:\t${LGRAY}$(get_date $(_query "$image" '.creation_date'))${RESET}\n"
 
             # Images/Snapshots list is ordered ASC, so the latest backups are at the end of the list
-            if [[ $count > $SIB_MAX_BACKUP ]] || [[ $(get_date $(_query "$image" '.creation_date')) -lt $(get_date "$SIB_MAX_RETENTION_DATE") ]]; then
+            if [[ $count > $SIB_MAX_BACKUP ]] || [[ $(get_date $(_query "$image" '.creation_date')) -lt "$SIB_MAX_RETENTION_DATE" ]]; then
 
                 printf "[${BYELLOW}${count}${RESET}] 🔥 ${BRED}Deleting old image and associated snapshot!${RESET}\n"
                 printf "\tname:\t\t${LGRAY}$(_query "$image" '.name')${RESET}\n"
