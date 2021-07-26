@@ -22,3 +22,4 @@ Create a .env file to specify some variables :
 
 * jq
 * date
+* scw https://github.com/scaleway/scaleway-cli
