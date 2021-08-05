@@ -73,7 +73,6 @@ for instance in $(echo "$INSTANCES"); do
     create=1
 
     for image in $(echo "$IMAGES"); do
-
         if [[ "$(_query "$image" '.server_id')" == "$(_query "$instance" '.id')" ]]; then
 
             # Increment the backup counter (per server/instance)
@@ -95,9 +94,18 @@ for instance in $(echo "$INSTANCES"); do
                 if [ $DRY_RUN -eq 0 ]; then
                     scw instance image delete $(_query "$image" '.id') $SIB_ZONE
                     scw instance snapshot delete $(_query "$image" '.root_volume.id') $SIB_ZONE
+                    extra_volume=$(_query "$image" '.extra_volumes[].id')
+                    if [[ ! -z "$extra_volume" ]]; then
+                        printf "[${BYELLOW}${count}${RESET}] 🔥 ${BRED}Deleting extra volume snapshot!${RESET}\n"
+                        scw instance snapshot delete $extra_volume $SIB_ZONE
+                    fi
                 else
                     printf "\nDRY-RUN : scw instance image delete $(_query "$image" '.id') $SIB_ZONE\n"
                     printf "DRY-RUN : scw instance snapshot delete $(_query "$image" '.root_volume.id') $SIB_ZONE\n"
+                    extra_volume=$(_query "$image" '.extra_volumes[].id')
+                    if [[ ! -z "$extra_volume" ]]; then
+                        printf "DRY-RUN : scw instance snapshot delete $extra_volume $SIB_ZONE"
+                    fi
                 fi
 
                 # Increment deleted backup counter
@@ -108,7 +116,6 @@ for instance in $(echo "$INSTANCES"); do
             create=$([[ $(get_date "$TODAY") > $(get_date $(_query "$image" '.creation_date')) ]] && echo 1 || echo 0)
         fi
     done
-
 
     # Only create a backup if none today
     if [ $create -ne 0 ]; then
@@ -127,4 +134,3 @@ for instance in $(echo "$INSTANCES"); do
 done
 
 printf "Backup complete!👍\n\n"
-
