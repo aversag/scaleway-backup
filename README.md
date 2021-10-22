@@ -18,8 +18,8 @@ Create a .env file to specify some variables :
 * SIB_MAX_RETENTION=5
 * SIB_MAX_BACKUP=5
 
-## needed by the script
+## Prerequisites
 
 * jq
 * date
-* scw https://github.com/scaleway/scaleway-cli
+* scaleway Cli https://github.com/scaleway/scaleway-cli
