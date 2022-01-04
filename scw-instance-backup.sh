@@ -66,6 +66,11 @@ for instance in $(echo "$INSTANCES"); do
     printf "Name: ${BWHITE}$(_query "$instance" '.name')${RESET} (${active}$(_query "$instance" '.state')${RESET})\n"
     printf "ID: ${WHITE}$(_query "$instance" '.id') ${NC}\n"
     printf "Volume ID: ${WHITE}$(_query "$instance" '.volumes[].id') ${NC}\n"
+    
+    if [ $(_query "$instance" '.state') != "running" ]; then
+        echo ""
+        continue
+    fi
 
     # Define current instance/server variables
     count=0
